@@ -1,0 +1,13 @@
+# ~/.config/guitar-practice-logger/config.toml にコピーして使う（環境変数 GPL_CONFIG で場所を変更可）
+
+# DAW が曲ごとに書き出すフォルダの親（Windows 側）
+songs_root = "/mnt/c/Users/hiroshi/Music/GuitarPractice/songs"
+
+# 取り込んだ WAV の移動先（Windows 側）
+archive_dir = "/mnt/c/Users/hiroshi/Music/GuitarPractice/archive"
+
+# 曲の台帳（Git で管理する）
+songs_file = "~/work/private_github/guitar-practice-logger/songs.toml"
+
+# テイクの記録（WSL2 側に置く）
+db_path = "~/.local/share/guitar-practice-logger/takes.db"
