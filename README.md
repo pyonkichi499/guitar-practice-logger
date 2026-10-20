@@ -6,8 +6,7 @@
 
 ```zsh
 uv sync
-mkdir -p ~/.config/guitar-practice-logger
-cp config.example.toml ~/.config/guitar-practice-logger/config.toml  # パスを環境に合わせて編集
+cp config.example.toml config.toml  # パスを環境に合わせて編集（config.toml は Git 管理外）
 ```
 
 ## 使い方
