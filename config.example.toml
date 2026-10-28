@@ -2,10 +2,10 @@
 # 相対パスはこのファイルのあるディレクトリが基準
 
 # DAW が曲ごとに書き出すフォルダの親（Windows 側）
-songs_root = "/mnt/c/Users/hiroshi/Music/GuitarPractice/songs"
+songs_root = "/mnt/c/Users/<ユーザー名>/Music/GuitarPractice/songs"
 
 # 取り込んだ WAV の移動先（Windows 側）
-archive_dir = "/mnt/c/Users/hiroshi/Music/GuitarPractice/archive"
+archive_dir = "/mnt/c/Users/<ユーザー名>/Music/GuitarPractice/archive"
 
 # 曲の台帳（Git で管理する）
 songs_file = "songs.toml"
