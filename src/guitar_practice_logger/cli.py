@@ -35,6 +35,16 @@ def cmd_intake(_: argparse.Namespace) -> None:
         print(f"{len(done)} 本取り込みました。")
 
 
+def cmd_render(args: argparse.Namespace) -> None:
+    config = load_config()
+    store = TakeStore(config.db_path)
+    try:
+        made = intake.render_missing(store, load_songs(config.songs_file), force=args.force)
+    finally:
+        store.close()
+    print(f"{len(made)} 本の動画を作りました。" if made else "作る動画はありません。")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="gpl", description="ギター練習の録音の取り込み")
     parser.add_argument("-v", "--verbose", action="store_true", help="詳細なログを出す")
@@ -51,6 +61,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("intake", help="曲フォルダの WAV を取り込む")
     p.set_defaults(func=cmd_intake)
+
+    p = sub.add_parser("render", help="動画（MP4）がないテイクの動画を作る")
+    p.add_argument("--force", action="store_true", help="既にある動画も作り直す")
+    p.set_defaults(func=cmd_render)
 
     return parser
 

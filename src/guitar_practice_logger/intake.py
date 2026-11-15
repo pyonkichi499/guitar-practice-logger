@@ -11,8 +11,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from . import video
 from .songs import Song
 from .takes import Take, TakeStore
+from .video import VideoError
 from .wavmeta import write_meta
 
 log = logging.getLogger(__name__)
@@ -122,7 +124,36 @@ def run(
         print("中止しました。ファイルは動かしていません。")
         return []
 
-    return [
-        intake_one(c, bpm, archive_dir, store)
-        for c, bpm in zip(result.candidates, bpms, strict=True)
-    ]
+    done = []
+    for c, bpm in zip(result.candidates, bpms, strict=True):
+        dest = intake_one(c, bpm, archive_dir, store)
+        done.append(dest)
+        make_video(dest, title=c.song.title, recorded_at=c.recorded_at, bpm=bpm)
+    return done
+
+
+def render_missing(store: TakeStore, songs: list[Song], *, force: bool = False) -> list[Path]:
+    """MP4 がないテイクの動画を作る。force なら全テイクを作り直す。作った MP4 を返す。"""
+    titles = {s.id: s.title for s in songs}
+    made = []
+    for take in store.all():
+        if not take.file_path.exists():
+            print(f"警告: WAV が見つかりません: {take.file_path}")
+            continue
+        if not force and video.video_path(take.file_path).exists():
+            continue
+        title = titles.get(take.song_id, take.song_id)
+        out = make_video(take.file_path, title=title, recorded_at=take.recorded_at, bpm=take.bpm)
+        if out:
+            made.append(out)
+    return made
+
+
+def make_video(wav: Path, *, title: str, recorded_at: datetime, bpm: int) -> Path | None:
+    """MP4 を作る。失敗しても取り込みは済んでいるので、警告だけ出して続ける。"""
+    print(f"動画を作っています: {wav.name}")
+    try:
+        return video.render(wav, title=title, recorded_at=recorded_at, bpm=bpm)
+    except VideoError as e:
+        print(f"警告: 動画を作れませんでした（gpl render で作り直せます）: {e}")
+        return None

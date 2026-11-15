@@ -1,11 +1,12 @@
 import os
+import shutil
 import wave
 from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from guitar_practice_logger import intake
+from guitar_practice_logger import intake, video
 from guitar_practice_logger.songs import Song, SongError, add_song, load_songs
 from guitar_practice_logger.takes import TakeStore
 from guitar_practice_logger.wavmeta import read_meta
@@ -119,3 +120,44 @@ def test_add_song(tmp_path):
         add_song(songs_file, tmp_path / "songs", SONG_A)
     with pytest.raises(SongError):
         add_song(songs_file, tmp_path / "songs", Song("曲B", "曲B"))
+
+
+needs_ffmpeg = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg がない")
+
+
+@needs_ffmpeg
+def test_intake_makes_video(env):
+    songs_root, archive, store = env
+    make_wav(songs_root / "chromatic" / "Export.wav", datetime(2026, 10, 21))
+
+    intake.run(songs_root, archive, [CHROMATIC], store, answers("120", "y"))
+
+    assert (archive / "chromatic" / "20261021_chromatic_120.mp4").exists()
+    assert not list(archive.rglob("*.part.mp4"))
+
+
+def test_intake_succeeds_without_ffmpeg(env, monkeypatch, capsys):
+    songs_root, archive, store = env
+    make_wav(songs_root / "chromatic" / "Export.wav", datetime(2026, 10, 21))
+    monkeypatch.setattr(video.shutil, "which", lambda _: None)
+
+    done = intake.run(songs_root, archive, [CHROMATIC], store, answers("120", "y"))
+
+    assert done == [archive / "chromatic" / "20261021_chromatic_120.wav"]
+    assert not done[0].with_suffix(".mp4").exists()
+    assert "gpl render" in capsys.readouterr().out
+
+
+@needs_ffmpeg
+def test_render_missing_makes_only_missing_videos(env, monkeypatch):
+    songs_root, archive, store = env
+    make_wav(songs_root / "chromatic" / "Export.wav", datetime(2026, 10, 21))
+    with monkeypatch.context() as m:
+        m.setattr(video.shutil, "which", lambda _: None)
+        intake.run(songs_root, archive, [CHROMATIC], store, answers("120", "y"))
+
+    made = intake.render_missing(store, [CHROMATIC])
+    assert made == [archive / "chromatic" / "20261021_chromatic_120.mp4"]
+    assert made[0].exists()
+    assert intake.render_missing(store, [CHROMATIC]) == []
+    assert intake.render_missing(store, [CHROMATIC], force=True) == made

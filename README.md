@@ -10,13 +10,13 @@
 
 ## 現状
 
-**Phase 1（録音して取り込むまで）が使える状態。** 動画化と公開（Phase 2-A）はまだない。
+**Phase 1（録音して取り込むまで）と、Phase 2-A のうち動画化が使える状態。** YouTube への公開と GDrive への保存はまだない。
 
 | できること | まだできないこと |
 |---|---|
-| 曲の登録と一覧表示 | 動画化、YouTube への公開、GDrive への保存 |
+| 曲の登録と一覧表示 | YouTube への公開、GDrive への保存 |
 | 書き出した WAV の取り込み（BPM の入力、名前の付け替え、メタデータの書き込み、記録） | 取り込んだ記録の修正 |
-| | DB が消えたときに WAV から記録を作り直すこと（必要な情報は WAV に書き込み済み） |
+| 取り込み時の動画化（曲名・録音日・BPM を表示した MP4） | DB が消えたときに WAV から記録を作り直すこと（必要な情報は WAV に書き込み済み） |
 
 今後の計画は [docs/roadmap.md](docs/roadmap.md) を参照。
 
@@ -34,7 +34,7 @@
 ## 前提
 
 - Windows 11 ＋ WSL2（このツールは WSL2 上で動かし、Windows 側のフォルダを `/mnt/c` 経由で読む）
-- WSL2 側に [uv](https://docs.astral.sh/uv/) と ffmpeg
+- WSL2 側に [uv](https://docs.astral.sh/uv/)、ffmpeg、日本語フォント（Noto Sans CJK JP。`sudo apt install fonts-noto-cjk`）
 - 録音機材: ZOOM G2 FOUR（USB オーディオインターフェースとして使う）
 - DAW: Cakewalk Next
 
@@ -87,13 +87,16 @@ uv run gpl songs   # 一覧表示
    ```
 
 3. WAV がある曲ごとに BPM を聞かれるので入力する（Enter だけなら前回の値）。
-4. 一覧を確認して `y` を押すと、WAV が `<archive_dir>/<曲 ID>/<録音日>_<曲 ID>_<BPM>.wav` に移る。`y` 以外ならファイルは動かない。
+4. 一覧を確認して `y` を押すと、WAV が `<archive_dir>/<曲 ID>/<録音日>_<曲 ID>_<BPM>.wav` に移り、同じ場所に同じ名前の MP4（YouTube 用の動画）ができる。`y` 以外ならファイルは動かない。
+5. MP4 を YouTube Studio から手動でアップロードする（自動化は Phase 2-A の残り）。
 
 注意:
 
 - 録音日はファイルの更新日時から取る。
 - 取り込みを忘れたまま翌日に同じ曲を書き出すと、前日分は上書きされて失われる。
 - 1 つの曲フォルダに WAV が 2 本以上あると、その曲は飛ばされる（警告が出る）。
+- WAV は曲フォルダ（`<songs_root>/<曲 ID>/`）の中に書き出す。`songs_root` の直下に置いた WAV は取り込まれない。
+- 動画を作れなかった場合（ffmpeg がないなど）も、取り込み自体は完了する。`uv run gpl render` で MP4 がないテイクの動画を作り直せる（`--force` で全テイクを作り直す）。
 
 詳しい挙動は [docs/specs/intake.md](docs/specs/intake.md) を参照。
 
@@ -132,3 +135,4 @@ uv run ruff check . && uv run ruff format .
 | `intake.py` | 取り込み |
 | `takes.py` | テイクの記録（SQLite） |
 | `wavmeta.py` | WAV のメタデータ |
+| `video.py` | 動画（MP4）の作成 |

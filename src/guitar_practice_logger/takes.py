@@ -41,6 +41,15 @@ class TakeStore:
         ).fetchone()
         return row[0] if row else None
 
+    def all(self) -> list[Take]:
+        rows = self._conn.execute(
+            "SELECT song_id, recorded_at, bpm, file_path FROM takes ORDER BY recorded_at"
+        ).fetchall()
+        return [
+            Take(song_id, datetime.fromisoformat(recorded_at), bpm, Path(file_path))
+            for song_id, recorded_at, bpm, file_path in rows
+        ]
+
     def add(self, take: Take) -> None:
         with self._conn:
             self._conn.execute(
